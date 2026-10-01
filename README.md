@@ -1,60 +1,99 @@
-# Attendance Notification System
+<div align="center">
 
-This project implements an attendance notification system that reads student attendance records from AWS S3 and sends notifications via AWS Simple Email Service (SES). The system checks each student's attendance status for the day and sends an appropriate email notification.
+# Attendance Notification System on AWS
 
-![](https://github.com/harshakalluri1403/Attendance-Notification-System-Using-AWS/blob/02f902c92cc6ca3038ae7c55d2209db699994e83/a)
+### Reads the day's attendance from S3 and emails every student their status via SES
 
-![](https://github.com/harshakalluri1403/Attendance-Notification-System-Using-AWS/blob/02f902c92cc6ca3038ae7c55d2209db699994e83/d)
+![AWS S3](https://img.shields.io/badge/AWS-S3-569A31?logo=amazons3&logoColor=white)
+![AWS SES](https://img.shields.io/badge/AWS-SES-DD344C?logo=amazonsimpleemailservice&logoColor=white)
+![Python](https://img.shields.io/badge/python-3.x-3776AB?logo=python&logoColor=white)
+![Libraries](https://img.shields.io/badge/libs-pandas%20·%20boto3-150458)
+![Status](https://img.shields.io/badge/status-demo-lightgrey)
 
-## Features
+[What it does](#what-it-does) ·
+[How it works](#how-it-works) ·
+[Setup](#setup) ·
+[Run it](#run-it)
 
-- Reads student information and attendance records from Excel files stored in an AWS S3 bucket.
-- Sends attendance notifications to students via email using AWS SES.
-- Supports attendance status notifications for both present and absent students.
-- Uploads the final attendance status back to S3 for record-keeping.
+</div>
 
-## Requirements
+---
 
-- Python 3.x
-- `pandas` library
-- `boto3` library
+Mark attendance in a spreadsheet, drop it in an S3 bucket, run one script — and
+every student gets a personalised email about whether they were **present**,
+**absent**, or **missing a record** for the day. A small, practical demo of
+wiring `pandas` to AWS S3 and SES with `boto3`.
+
+<p align="center">
+<img src="architecture.png" width="85%" alt="System architecture overview">
+</p>
+
+## What it does
+
+- Reads student details and attendance records from **Excel files in S3**
+- Looks up each student's status for **today's date**
+- Sends a tailored email via **AWS SES** — a different message for present,
+  absent, and no-record cases
+- Writes the processed attendance back to S3 as `Final_Attendance.xlsx`
+
+<p align="center">
+<img src="email-notification.png" width="70%" alt="Example notification email">
+</p>
+
+## How it works
+
+The logic lives in [`attend.py`](attend.py):
+
+```
+Students.xlsx  ┐
+               ├─▶ pandas (match by student_id + today's date) ─▶ SES email per student ─▶ Final_Attendance.xlsx → S3
+Attendance.xlsx┘
+```
+
+1. Download `Students.xlsx` and `Attendance.xlsx` from the S3 bucket.
+2. For each student, find today's row and read the `status` column.
+3. Compose the matching message and send it with `ses_client.send_email(...)`.
+4. Upload the final sheet back to S3 for record-keeping.
+
+### The input sheets
+
+| `Students.xlsx` | `Attendance.xlsx` |
+| :---: | :---: |
+| <img src="students-sheet.png" width="100%" alt="Students sheet: IDs and emails"> | <img src="attendance-sheet.png" width="100%" alt="Attendance sheet: IDs, dates, status"> |
+| `student_id`, `email` | `student_id`, `date`, `status` |
 
 ## Setup
 
-1. **Install Required Libraries**
-
-   Make sure you have the necessary libraries installed. You can install them using pip:
-
+1. **Install dependencies**
    ```bash
-   pip install pandas boto3
+   pip install pandas boto3 openpyxl
    ```
-2. AWS Configuration
-   - Ensure you have an AWS account and have configured your AWS credentials. You can do this by setting up the AWS CLI and running aws configure.
-   - The email used as the sender in the SES must be verified in the AWS SES console.
+2. **Configure AWS** — `aws configure` with credentials that can read the S3
+   bucket and send through SES. Verify your sender address in the SES console
+   (required while your account is in the SES sandbox).
+3. **Prepare S3** — create a bucket and upload `Students.xlsx` and
+   `Attendance.xlsx`.
 
-3. S3 Bucket Setup
-   - Create an S3 bucket (e.g., food-delivery-app-assets).
-   - Upload the following Excel files to the S3 bucket:
-      - Students.xlsx: Contains student IDs and their email addresses.
+## Run it
 
-   ![](https://github.com/harshakalluri1403/Attendance-Notification-System-Using-AWS/blob/02f902c92cc6ca3038ae7c55d2209db699994e83/b)
-       
-      - Attendance.xlsx: Contains attendance records with student IDs and dates.
+Set these in [`attend.py`](attend.py) to match your setup:
 
-   ![](https://github.com/harshakalluri1403/Attendance-Notification-System-Using-AWS/blob/02f902c92cc6ca3038ae7c55d2209db699994e83/c)
-
-## Usage
-1. Update the following constants in the script to match your configuration:
- ```python
-BUCKET_NAME = 'food-delivery-app-assets'  # Your S3 bucket name
-STUDENTS_FILE_KEY = 'Students.xlsx'  # Path to Students.xlsx in S3
-ATTENDANCE_FILE_KEY = 'Attendance.xlsx'  # Path to Attendance.xlsx in S3
+```python
+BUCKET_NAME        = 'your-bucket-name'
+STUDENTS_FILE_KEY  = 'Students.xlsx'
+ATTENDANCE_FILE_KEY= 'Attendance.xlsx'
+Source             = 'you@verified-domain.com'   # your SES-verified sender
 ```
-2. Replace the Source email address in the send_email function with your verified email in SES:
- ```python
-Source='pbot6789@gmail.com',  # Replace with your verified email in SES
- ```
-3. Run the script:
- ```bash
+
+Then:
+
+```bash
 python attend.py
- ```
+```
+
+> **Date format:** the script matches `date` values formatted `dd-mm-yyyy`.
+> Make sure the dates in `Attendance.xlsx` use the same format as today's date.
+
+## Tech stack
+
+AWS S3 · AWS SES · Python · pandas · boto3 · openpyxl
