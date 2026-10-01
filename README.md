@@ -9,6 +9,7 @@
 ![Python](https://img.shields.io/badge/python-3.x-3776AB?logo=python&logoColor=white)
 ![Libraries](https://img.shields.io/badge/libs-pandas%20·%20boto3-150458)
 ![Status](https://img.shields.io/badge/status-demo-lightgrey)
+![License](https://img.shields.io/badge/license-MIT-blue)
 
 [What it does](#what-it-does) ·
 [How it works](#how-it-works) ·
@@ -97,3 +98,7 @@ python attend.py
 ## Tech stack
 
 AWS S3 · AWS SES · Python · pandas · boto3 · openpyxl
+
+## License
+
+Released under the [MIT License](LICENSE).
